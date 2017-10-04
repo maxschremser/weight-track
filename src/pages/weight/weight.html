@@ -1,0 +1,46 @@
+<!--
+  Generated template for the WeightPage page.
+
+  See http://ionicframework.com/docs/components/#navigation for more info on
+  Ionic pages and navigation.
+-->
+<ion-header>
+
+  <ion-navbar>
+    <ion-title>Gewicht</ion-title>
+  </ion-navbar>
+
+</ion-header>
+
+
+<ion-content padding>
+  <h2>Füge dein heutiges Gewicht hinzu</h2>
+  <p>
+    Stell Dich auf die Waage und trage dein <b>Gewicht</b>, deinen <b>Körperfettanteil</b> und deinen <b>Körperwasseranteil</b>
+    ein.
+  </p>
+
+  <ion-card>
+    <ion-card-header>Gewicht, Fett- und Wasseranteil</ion-card-header>
+    <ion-card-content>
+      <ion-list>
+
+        <ion-item>
+          <ion-label fixed>Gewicht (kg)</ion-label>
+          <ion-input type="number" #weight></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label fixed>Fettanteil (%)</ion-label>
+          <ion-input type="number" #fett></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label fixed>Wasseranteil (%)</ion-label>
+          <ion-input type="number" #water></ion-input>
+        </ion-item>
+      </ion-list>
+      <button ion-button round full (click)="addWeight(weight, fett, water)">Eintragen</button>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
