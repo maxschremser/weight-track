@@ -1,89 +1,94 @@
-import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
-import { Storage } from '@ionic/storage';
-import {AlertController} from "ionic-angular/index";
-
-/**
- * Generated class for the WeightPage page.
- *
- * See https://ionicframework.com/docs/components/#navigation for more info on
- * Ionic pages and navigation.
- */
+import {Component, OnInit} from '@angular/core';
+import {IonicPage, ToastController, ViewController} from 'ionic-angular';
+import {FormBuilder, FormGroup, Validators} from '@angular/forms';
+import {Entry} from '../../models/entry';
+import {StorageProvider} from '../../providers/storage/storage';
+import {AlertProvider, ENTRY_EXISTS_DIALOG} from '../../providers/alert/alert';
 
 @IonicPage()
 @Component({
   selector: 'page-weight',
   templateUrl: 'weight.html',
 })
-export class WeightPage {
-  weight: number;
-  fett: number;
-  water: number;
+export class WeightPage implements OnInit {
+  entry: Entry = new Entry();
 
-  constructor(private storage:Storage, private alertCtrl:AlertController, public navCtrl:NavController, public navParams:NavParams) {
-  }
+  form: FormGroup;
 
-  ionViewDidLoad() {
-    console.log('ionViewDidLoad WeightPage');
-  }
-
-  addWeight(weight: HTMLInputElement, fett: HTMLInputElement, water: HTMLInputElement) {
-    let exists = false;
-    this.weight = +weight.value;
-    this.fett = +fett.value;
-    this.water = +water.value;
-
-    console.log("add clicked", new Date().getTime(), weight.value, fett.value, water.value);
-    this.storage.keys().then((keys) => {
-      keys.forEach((key: any) => {
-        if (key === '_settings' || isNaN(key))
-          return;
-
-        let d = new Date();
-        d.setTime(key);
-
-        const entryDate = this.getFormattedDate(d);
-        if (entryDate === this.today) {
-          exists = true;
-        }
-      });
-      this.showPromptAndAdd(exists);
-    });
+  constructor(private fb: FormBuilder, private view: ViewController, private storage: StorageProvider, private alert: AlertProvider,
+              private toast: ToastController) {
   }
 
   get today() {
     return this.getFormattedDate(new Date());
   }
 
-  getFormattedDate(d:Date) {
-    return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+  ngOnInit(): void {
+    this.form = this.fb.group({
+      weight: this.fb.control('', Validators.required),
+      fett: this.fb.control(''),
+      water: this.fb.control('')
+    });
   }
 
-  showPromptAndAdd(exists: boolean) {
-    console.log('exists', exists);
-    if (exists) {
-      const confirm = this.alertCtrl.create({
-        title: 'Eintrag überschreiben ?',
-        message: 'Für heute existiert bereits ein Eintrag, willst du den wirklich überschreiben ?',
-        buttons: [
-          {
-            text: 'Nein',
-            role: 'cancel'
-          },
-          {
-            text: 'Ja',
-            handler: () => {
-              exists = false;
-            }
-          }
-        ]
-      });
-      confirm.present();
-    }
-    if (!exists) {
-      this.storage.set('' + new Date().getTime(), {weight: this.weight, fett: this.fett, water: this.water})
-    }
+  ionViewDidEnter() {
+    this.clearForm();
+  }
 
+  getToast() {
+    return this.toast;
+  }
+
+  addWeight(form) {
+    this.entry.weight = +form.get('weight').value;
+    this.entry.fett = +form.get('fett').value;
+    this.entry.water = +form.get('water').value;
+    this.showPromptAndAdd();
+  }
+
+  getFormattedDate(d: Date) {
+    return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+  }
+
+  showPromptAndAdd() {
+    this.storage.hasEntryForToday().subscribe((e) => {
+      console.log('hasEntry: ', e);
+      if (e === true) {
+        const confirm = this.alert.create(ENTRY_EXISTS_DIALOG, this.entry, this.view, this.addEntry, this.updateEntry);
+        confirm.present();
+      } else {
+        this.addEntry();
+      }
+    });
+  }
+
+  // is called either from the AlertController or from this Component
+  addEntry() {
+    this.storage.addEntry(this.entry).subscribe(() => {
+      this.view.instance.getToast().create({
+          message: 'Gewicht hinzugefügt',
+          duration: 2000,
+          position: 'bottom'
+        }).present();
+      this.view.instance.clearForm();
+      });
+  }
+
+  // is called either from the AlertController or from this Component
+  updateEntry() {
+    this.storage.updateEntry(this.entry).subscribe(() => {
+      this.view.instance.getToast().create({
+        message: 'Gewicht gespeichert',
+        duration: 2000,
+        position: 'bottom'
+      }).present();
+    });
+  }
+
+  clearForm() {
+    this.form.get('weight').setValue('');
+    this.form.get('fett').setValue('');
+    this.form.get('water').setValue('');
   }
 
 }

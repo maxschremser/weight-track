@@ -1,0 +1,1 @@
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore bin/my-weight-track.jks /Users/AT003053/jDev/projects/weight-track/platforms/android/build/outputs/apk/android-release-unsigned.apk weight_track
